@@ -58,3 +58,28 @@ Adjustments to the table structure or additional columns can be made by editing 
 Dependencies:
 The utility assumes that the CSV file exists and is named based on the date in PST timezone.
 No external libraries or frameworks are required, as this utility uses vanilla JavaScript.
+
+-----------------------------------------------------------------------------------------------------------------------------------
+
+Simple HTTP CSV Server
+A lightweight utility to serve CSV files over HTTP using Python's built-in modules. The server will serve files from a specified directory on your local machine.
+
+Features:
+Simplicity: Uses Python's built-in http.server and socketserver modules; no external dependencies required.
+Custom Port & Directory: Set up to serve on port 8080 and from the directory /Users/viraf/csv by default.
+Prerequisites:
+Python 3.x installed on your machine.
+
+Usage:
+Clone or Download the Script: Download the Python script to your local machine.
+Navigate to Script Location: Use the terminal or command prompt to navigate to the location where you saved the script.
+Run the Script: Execute the command python <script_name>.py to start the server.
+Access the Server: Once the server starts, you can access it by navigating to http://localhost:8080/ in your web browser. Here, you will see the list of CSV files available in the specified directory.
+
+Customization:
+Changing the Port: If you want to use a port other than 8080, modify the PORT variable in the script.
+Changing the Directory: If you wish to serve files from a different directory, update the DIRECTORY variable with the desired path.
+Note:
+The server is set to serve files from /Users/viraf/csv by default. Ensure that this directory exists or update the DIRECTORY variable to a valid path before running the script.
+Remember to allow access through your firewall if you intend to access this server from other devices on your network.
+
