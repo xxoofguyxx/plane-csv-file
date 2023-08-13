@@ -1,0 +1,90 @@
+  <!DOCTYPE html>
+<html>
+<head>
+    <title>CSV to HTML Table</title>
+</head>
+<body>
+    <div id="csvRoot"></div>
+    <script>
+        // Get current date and adjust to PST
+        let currentDate = new Date();
+        let formattedDate = currentDate.toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles", year: 'numeric', month: '2-digit', day: '2-digit' });
+
+        const csvFilePath = 'flight_data_' + formattedDate + '.csv';
+
+        fetch(csvFilePath)
+            .then(response => response.text())
+            .then(data => {
+                let parsedData = data.split('\n').map(row => row.split(','));
+
+                // Create table
+                let table = document.createElement("table");
+                document.getElementById('csvRoot').appendChild(table);
+
+                // Create table header
+                let thead = document.createElement("thead");
+                table.appendChild(thead);
+                let headerRow = document.createElement("tr");
+                thead.appendChild(headerRow);
+
+                parsedData[0].concat(['Google Link', 'Wikipedia Link', 'OpenStreetMap Link']).forEach(headerText => {
+                    let th = document.createElement("th");
+                    th.textContent = headerText;
+                    headerRow.appendChild(th);
+                });
+
+                // Create table body
+                let tbody = document.createElement("tbody");
+                table.appendChild(tbody);
+
+                parsedData.slice(1).forEach(rowData => {
+                    let row = document.createElement("tr");
+                    tbody.appendChild(row);
+
+                    rowData.forEach(cellData => {
+                        let cell = document.createElement("td");
+                        cell.textContent = cellData;
+                        row.appendChild(cell);
+                    });
+
+                    let type = rowData[parsedData[0].indexOf('type')];
+                    let lat = rowData[parsedData[0].indexOf('lat')];
+                    let lon = rowData[parsedData[0].indexOf('lon')];
+
+                    // Create Google link
+                    let googleLink = document.createElement("td");
+                    let googleAnchor = document.createElement("a");
+                    googleAnchor.href = "https://www.google.com/search?q=" + type.replace(' ', '+');
+                    googleAnchor.textContent = "Google Search";
+                    googleAnchor.target = "_blank";  // Open in a new tab
+                    googleLink.appendChild(googleAnchor);
+                    row.appendChild(googleLink);
+
+                    // Create Wikipedia link
+                    let wikiLink = document.createElement("td");
+                    let wikiAnchor = document.createElement("a");
+                    wikiAnchor.href = "https://en.wikipedia.org/wiki/" + type.replace(' ', '_');
+                    wikiAnchor.textContent = "Wikipedia Page";
+                    wikiAnchor.target = "_blank";  // Open in a new tab
+                    wikiLink.appendChild(wikiAnchor);
+                    row.appendChild(wikiLink);
+
+                    // Create OpenStreetMap link
+                    if(lat && lon) {
+                        let osmLink = document.createElement("td");
+                        let osmAnchor = document.createElement("a");
+                        osmAnchor.href = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=15/${lat}/${lon}`;
+                        osmAnchor.textContent = "OpenStreetMap";
+                        osmAnchor.target = "_blank";  // Open in a new tab
+                        osmLink.appendChild(osmAnchor);
+                        row.appendChild(osmLink);
+                    } else {
+                        let osmLink = document.createElement("td");
+                        osmLink.textContent = "N/A";
+                        row.appendChild(osmLink);
+                    }
+                });
+            });
+    </script>
+</body>
+</html>
