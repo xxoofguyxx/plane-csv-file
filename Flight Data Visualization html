@@ -1,90 +1,60 @@
-  <!DOCTYPE html>
-<html>
-<head>
-    <title>CSV to HTML Table</title>
-</head>
-<body>
-    <div id="csvRoot"></div>
-    <script>
-        // Get current date and adjust to PST
-        let currentDate = new Date();
-        let formattedDate = currentDate.toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles", year: 'numeric', month: '2-digit', day: '2-digit' });
+import requests
+import time
+import os
+import csv
+from datetime import datetime
 
-        const csvFilePath = 'flight_data_' + formattedDate + '.csv';
+url = "https://04becbc824cd0795911037a99f33871d.balena-devices.com/ajax/aircraft"
+downloads_folder = os.path.expanduser('/Users/viraf/csv')
 
-        fetch(csvFilePath)
-            .then(response => response.text())
-            .then(data => {
-                let parsedData = data.split('\n').map(row => row.split(','));
+def get_plane_data():
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+        aircraft_data = data["aircraft"]
+        return aircraft_data
+    except requests.exceptions.RequestException as e:
+        print("Error occurred:", e)
+        return {}
 
-                // Create table
-                let table = document.createElement("table");
-                document.getElementById('csvRoot').appendChild(table);
+current_date = datetime.now().date()
+csv_file = open(os.path.join(downloads_folder, f'flight_data_{current_date}.csv'), 'a', newline='')
+csv_writer = csv.DictWriter(csv_file, fieldnames=['lat', 'lon', 'type', 'callsign', 'route', 'time'])  # Added 'route' field
+csv_writer.writeheader()
 
-                // Create table header
-                let thead = document.createElement("thead");
-                table.appendChild(thead);
-                let headerRow = document.createElement("tr");
-                thead.appendChild(headerRow);
+while True:
+    new_date = datetime.now().date()
+    if new_date != current_date:
+        csv_file.close()
+        current_date = new_date
+        csv_file = open(os.path.join(downloads_folder, f'flight_data_{current_date}.csv'), 'a', newline='')
+        csv_writer = csv.DictWriter(csv_file, fieldnames=['lat', 'lon', 'type', 'callsign', 'route', 'time'])  # Added 'route' field
+        csv_writer.writeheader()
 
-                parsedData[0].concat(['Google Link', 'Wikipedia Link', 'OpenStreetMap Link']).forEach(headerText => {
-                    let th = document.createElement("th");
-                    th.textContent = headerText;
-                    headerRow.appendChild(th);
-                });
+    aircraft_data = get_plane_data()
 
-                // Create table body
-                let tbody = document.createElement("tbody");
-                table.appendChild(tbody);
+    for aircraft_id, aircraft_info in aircraft_data.items():
+        plane_type = aircraft_info.get("type")
+        callsign = aircraft_info.get("callsign", "N/A")
+        route = aircraft_info.get("route", "N/A")  # Extracting the route information
 
-                parsedData.slice(1).forEach(rowData => {
-                    let row = document.createElement("tr");
-                    tbody.appendChild(row);
+        if plane_type:
+            longitude = aircraft_info.get('lon')
+            latitude = aircraft_info.get('lat')
+            detection_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-                    rowData.forEach(cellData => {
-                        let cell = document.createElement("td");
-                        cell.textContent = cellData;
-                        row.appendChild(cell);
-                    });
+            csv_writer.writerow({
+                'lat': latitude,
+                'lon': longitude,
+                'type': plane_type,
+                'callsign': callsign,
+                'route': route,  # Writing the route information to the CSV
+                'time': detection_time,
+            })
 
-                    let type = rowData[parsedData[0].indexOf('type')];
-                    let lat = rowData[parsedData[0].indexOf('lat')];
-                    let lon = rowData[parsedData[0].indexOf('lon')];
+            print(f"Plane ID: {aircraft_id}, Plane type: {plane_type}, Callsign: {callsign}, Route: {route}, Detected at: {detection_time}")
+        else:
+            print(f"Plane ID: {aircraft_id} does not have a 'type' field.")
 
-                    // Create Google link
-                    let googleLink = document.createElement("td");
-                    let googleAnchor = document.createElement("a");
-                    googleAnchor.href = "https://www.google.com/search?q=" + type.replace(' ', '+');
-                    googleAnchor.textContent = "Google Search";
-                    googleAnchor.target = "_blank";  // Open in a new tab
-                    googleLink.appendChild(googleAnchor);
-                    row.appendChild(googleLink);
-
-                    // Create Wikipedia link
-                    let wikiLink = document.createElement("td");
-                    let wikiAnchor = document.createElement("a");
-                    wikiAnchor.href = "https://en.wikipedia.org/wiki/" + type.replace(' ', '_');
-                    wikiAnchor.textContent = "Wikipedia Page";
-                    wikiAnchor.target = "_blank";  // Open in a new tab
-                    wikiLink.appendChild(wikiAnchor);
-                    row.appendChild(wikiLink);
-
-                    // Create OpenStreetMap link
-                    if(lat && lon) {
-                        let osmLink = document.createElement("td");
-                        let osmAnchor = document.createElement("a");
-                        osmAnchor.href = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=15/${lat}/${lon}`;
-                        osmAnchor.textContent = "OpenStreetMap";
-                        osmAnchor.target = "_blank";  // Open in a new tab
-                        osmLink.appendChild(osmAnchor);
-                        row.appendChild(osmLink);
-                    } else {
-                        let osmLink = document.createElement("td");
-                        osmLink.textContent = "N/A";
-                        row.appendChild(osmLink);
-                    }
-                });
-            });
-    </script>
-</body>
-</html>
+    time.sleep(15)
