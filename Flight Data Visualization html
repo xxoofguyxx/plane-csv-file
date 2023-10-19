@@ -5,7 +5,7 @@ import csv
 from datetime import datetime
 
 url = "https://04becbc824cd0795911037a99f33871d.balena-devices.com/ajax/aircraft"
-downloads_folder = os.path.expanduser('/Users/viraf/csv')
+downloads_folder = os.path.expanduser('/Users/viraf/csv') //add your path
 
 def get_plane_data():
     try:
