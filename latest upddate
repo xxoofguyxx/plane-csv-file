@@ -1,0 +1,60 @@
+import requests
+import time
+import os
+import csv
+from datetime import datetime
+
+url = "https://04becbc824cd0795911037a99f33871d.balena-devices.com/ajax/aircraft"
+downloads_folder = os.path.expanduser('/Users/viraf/csv')
+
+def get_plane_data():
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+        aircraft_data = data["aircraft"]
+        return aircraft_data
+    except requests.exceptions.RequestException as e:
+        print("Error occurred:", e)
+        return {}
+
+current_date = datetime.now().date()
+csv_file = open(os.path.join(downloads_folder, f'flight_data_{current_date}.csv'), 'a', newline='')
+csv_writer = csv.DictWriter(csv_file, fieldnames=['lat', 'lon', 'type', 'callsign', 'route', 'time'])  # Added 'route' field
+csv_writer.writeheader()
+
+while True:
+    new_date = datetime.now().date()
+    if new_date != current_date:
+        csv_file.close()
+        current_date = new_date
+        csv_file = open(os.path.join(downloads_folder, f'flight_data_{current_date}.csv'), 'a', newline='')
+        csv_writer = csv.DictWriter(csv_file, fieldnames=['lat', 'lon', 'type', 'callsign', 'route', 'time'])  # Added 'route' field
+        csv_writer.writeheader()
+
+    aircraft_data = get_plane_data()
+
+    for aircraft_id, aircraft_info in aircraft_data.items():
+        plane_type = aircraft_info.get("type")
+        callsign = aircraft_info.get("callsign", "N/A")
+        route = aircraft_info.get("route", "N/A")  # Extracting the route information
+
+        if plane_type:
+            longitude = aircraft_info.get('lon')
+            latitude = aircraft_info.get('lat')
+            detection_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            csv_writer.writerow({
+                'lat': latitude,
+                'lon': longitude,
+                'type': plane_type,
+                'callsign': callsign,
+                'route': route,  # Writing the route information to the CSV
+                'time': detection_time,
+            })
+
+            print(f"Plane ID: {aircraft_id}, Plane type: {plane_type}, Callsign: {callsign}, Route: {route}, Detected at: {detection_time}")
+        else:
+            print(f"Plane ID: {aircraft_id} does not have a 'type' field.")
+
+    time.sleep(15)
